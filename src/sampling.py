@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.stats as stats
+from emcee.autocorr import integrated_time
 
 
 def metropolis_hastings(
@@ -35,3 +36,18 @@ def metropolis_hastings(
             samples[i + 1] = x_current
 
     return samples, num_accept, num_accept / n_iter
+
+
+def clean_chain(chain, burnin=0):
+    """! Cleans up the Markov Chain including for correlations and burnin.
+
+    @param chain    The list of samples.
+    @param burnin   The initial number of samples to be skipped.
+
+    @returns        The cleaned up samples, ensured to likely be i.i.d."""
+    tau = [integrated_time(chain[:, i]) for i in range(chain.shape[1])]
+    thin = 2 * int(np.max(tau))
+    samples = chain[burnin::thin, :]
+
+    print(f"Final number of samples is {len(samples)}")
+    return samples
