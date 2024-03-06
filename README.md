@@ -12,6 +12,5 @@
 
 ## License
 
-## Author
-James Fergusson
-2024-03-06
+## Credits
+Repository was created using a script provided by James Fergusson towards the DIS Research Computing course.
