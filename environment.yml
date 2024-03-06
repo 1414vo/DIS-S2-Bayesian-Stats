@@ -1,0 +1,17 @@
+name: S2_Coursework
+channels:
+  - dglteam
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - pytest
+  - black
+  - numpy
+  - configparser
+  - matplotlib
+  - scipy
+  - pre-commit
+  - pandas
+  - flake8
+prefix: C:\Users\Acer\anaconda3\envs\S2_Coursework

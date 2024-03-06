@@ -1,0 +1,27 @@
+# Cache and Testing
+__pycache__/
+*.py[cod]
+*.pytest
+
+# Folders
+output/
+docs/
+!*Doxyfile
+# Cache and Testing
+__pycache__/
+*.py[cod]
+*.pytest
+
+# Folders
+output/
+docs/
+!*Doxyfile
+# Cache and Testing
+__pycache__/
+*.py[cod]
+*.pytest
+
+# Folders
+output/
+docs/
+!*Doxyfile
