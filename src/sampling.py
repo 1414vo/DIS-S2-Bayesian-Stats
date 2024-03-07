@@ -2,6 +2,7 @@ import numpy as np
 import scipy.stats as stats
 from emcee import EnsembleSampler
 from emcee.autocorr import integrated_time
+import nessai
 
 
 def metropolis_hastings(
@@ -54,6 +55,23 @@ def emcee_sampler(log_pdf, n_iter, n_dim, n_walkers=100, random_seed=0):
     sampler = EnsembleSampler(n_walkers, n_dim, log_pdf)
     sampler.run_mcmc(starting_points, n_iter)
     return sampler.get_chain()
+
+
+class NessaiModel(nessai.Model):
+    def __init__(self, param_names, param_bounds, prior_distributions, likelihood):
+        self.names = param_names
+        self.bounds = param_bounds
+        self.prior_distributions = prior_distributions
+        self.likelihood = likelihood
+
+    def log_prior(self, x):
+        log_p = np.log(self.in_bounds(x), dtype="float")
+        for i in range(len(x)):
+            log_p += np.log(self.prior_distributions[self.param_names[i]])
+        return log_p
+
+    def log_likelihood(self, x):
+        return self.likelihood(x)
 
 
 def clean_chain(chain, burnin=0):

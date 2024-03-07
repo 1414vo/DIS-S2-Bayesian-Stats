@@ -5,5 +5,8 @@ __pycache__/
 
 # Folders
 output/
-docs/html
-docs/latex
+docs/html/
+docs/latex/
+
+#Notebooks
+/notebooks
