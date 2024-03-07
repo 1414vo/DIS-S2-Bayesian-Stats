@@ -57,7 +57,7 @@ def emcee_sampler(log_pdf, n_iter, n_dim, n_walkers=100, random_seed=0):
     return sampler.get_chain()
 
 
-class NessaiModel(nessai.Model):
+class NessaiModel(nessai.model.Model):
     def __init__(self, param_names, param_bounds, prior_distributions, likelihood):
         self.names = param_names
         self.bounds = param_bounds
@@ -72,6 +72,16 @@ class NessaiModel(nessai.Model):
 
     def log_likelihood(self, x):
         return self.likelihood(x)
+
+
+def nessai_sampler(model, n_iter, random_seed=0):
+    sampler = nessai.flowsampler.Flowsampler(
+        model, output=None, seed=random_seed, nlive=n_iter
+    )
+    sampler.run()
+    samples = np.vstack([sampler.posterior_samples[param] for param in sampler.names]).T
+
+    return samples
 
 
 def clean_chain(chain, burnin=0):
