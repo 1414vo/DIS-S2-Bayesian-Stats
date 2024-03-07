@@ -2,7 +2,8 @@ import numpy as np
 import scipy.stats as stats
 from emcee import EnsembleSampler
 from emcee.autocorr import integrated_time
-import nessai
+from nessai.model import Model
+from nessai.flowsampler import FlowSampler
 
 
 def metropolis_hastings(
@@ -27,7 +28,7 @@ def metropolis_hastings(
 
     for i in range(n_iter):
         x_current = samples[i]
-        x_proposed = stats.multivariate_normal(x_current, cov_matrix)
+        x_proposed = stats.multivariate_normal.rvs(x_current, cov_matrix)
         log_a = log_pdf(*x_proposed) - log_pdf(*x_current)
 
         u = np.random.uniform()
@@ -40,24 +41,33 @@ def metropolis_hastings(
     return samples, num_accept, num_accept / n_iter
 
 
-def emcee_sampler(log_pdf, n_iter, n_dim, n_walkers=100, random_seed=0):
+def emcee_sampler(
+    log_pdf, prior_distributions, n_iter, n_dim, n_walkers=100, random_seed=0
+):
     """! A sampler that utilises the implementation from the "emcee" library.
 
-    @param log_pdf          The logarithm of the target PDF.
-    @param n_iter           The number of iterations for the algorithm.
-    @param n_dim            The number of dimensions for the sample space.
-    @param n_walkers        The number of different Markov processes from which we sample.
-    @param random_seed      The random seed.
+    @param log_pdf              The logarithm of the target PDF.
+    @param prior_distributions  A list for a prior function for each variable.
+    @param n_iter               The number of iterations for the algorithm.
+    @param n_dim                The number of dimensions for the sample space.
+    @param n_walkers            The number of different Markov processes from which we sample.
+    @param random_seed          The random seed.
 
-    @returns                The generated Markov chain."""
+    @returns                    The generated Markov chain."""
     np.random.seed(random_seed)
-    starting_points = np.random.randn(n_walkers, n_dim)
+    starting_points = np.vstack(
+        [
+            prior_distributions[i].rvs(size=n_walkers)
+            for i in range(len(prior_distributions))
+        ]
+    ).T
+
     sampler = EnsembleSampler(n_walkers, n_dim, log_pdf)
     sampler.run_mcmc(starting_points, n_iter)
-    return sampler.get_chain()
+    return sampler.get_chain(flat=True)
 
 
-class NessaiModel(nessai.model.Model):
+class NessaiModel(Model):
     """! A nessai model from sampling from a posterior distribution given a prior and a likelihood.
 
     @param param_names          The names of the variables being sampled.
@@ -85,8 +95,8 @@ class NessaiModel(nessai.model.Model):
         @returns    The log-prior for the parameters.
         """
         log_p = np.log(self.in_bounds(x), dtype="float")
-        for i in range(len(x)):
-            log_p += np.log(self.prior_distributions[self.param_names[i]])
+        for name in self.names:
+            log_p += np.log(self.prior_distributions[name](x[name]))
         return log_p
 
     def log_likelihood(self, x):
@@ -94,7 +104,7 @@ class NessaiModel(nessai.model.Model):
         @param      The array of parameters.
         @returns    The log-likelihood for the parameters.
         """
-        return self.likelihood(x)
+        return self.likelihood(**{name: x[name] for name in self.names})
 
 
 def nessai_sampler(model, n_iter, random_seed=0):
@@ -105,11 +115,9 @@ def nessai_sampler(model, n_iter, random_seed=0):
     @param random_seed  The random seed.
 
     @returns            The generated sample set."""
-    sampler = nessai.flowsampler.Flowsampler(
-        model, output=None, seed=random_seed, nlive=n_iter
-    )
+    sampler = FlowSampler(model, output="./", seed=random_seed, nlive=n_iter)
     sampler.run()
-    samples = np.vstack([sampler.posterior_samples[param] for param in sampler.names]).T
+    samples = np.vstack([sampler.posterior_samples[param] for param in model.names]).T
 
     return samples
 

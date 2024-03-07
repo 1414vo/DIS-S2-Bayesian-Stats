@@ -5,7 +5,8 @@ RUN mkdir -p S2_Coursework
 COPY . /S2_Coursework
 WORKDIR /S2_Coursework
 
-RUN conda env update --file environment.yml
+RUN conda env update --file environment.yml --name base
+RUN pip install pillow --force-reinstall
 
 RUN echo "conda activate S2_Coursework" >> ~/.bashrc
 SHELL ["/bin/bash", "--login", "-c"]
