@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.stats as stats
+from emcee import EnsembleSampler
 from emcee.autocorr import integrated_time
 
 
@@ -36,6 +37,23 @@ def metropolis_hastings(
             samples[i + 1] = x_current
 
     return samples, num_accept, num_accept / n_iter
+
+
+def emcee_sampler(log_pdf, n_iter, n_dim, n_walkers=100, random_seed=0):
+    """! A sampler that utilises the implementation from the "emcee" library.
+
+    @param log_pdf          The logarithm of the target PDF.
+    @param n_iter           The number of iterations for the algorithm.
+    @param n_dim            The number of dimensions for the sample space.
+    @param n_walkers        The number of different Markov processes from which we sample.
+    @param random_seed      The random seed.
+
+    @returns                The generated Markov chain."""
+    np.random.seed(random_seed)
+    starting_points = np.random.randn(n_walkers, n_dim)
+    sampler = EnsembleSampler(n_walkers, n_dim, log_pdf)
+    sampler.run_mcmc(starting_points, n_iter)
+    return sampler.get_chain()
 
 
 def clean_chain(chain, burnin=0):
