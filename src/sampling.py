@@ -58,23 +58,53 @@ def emcee_sampler(log_pdf, n_iter, n_dim, n_walkers=100, random_seed=0):
 
 
 class NessaiModel(nessai.model.Model):
+    """! A nessai model from sampling from a posterior distribution given a prior and a likelihood.
+
+    @param param_names          The names of the variables being sampled.
+    @param param_bounds         A dictionary of bounds for each variable.
+    @param prior_distributions  A dictionary for a prior function for each variable.
+    @param likelihood           The likelihood of the data given the parameter set.
+    """
+
     def __init__(self, param_names, param_bounds, prior_distributions, likelihood):
+        """! Initializes the Nessai sampler.
+
+        @param param_names          The names of the variables being sampled.
+        @param param_bounds         A dictionary of bounds for each variable.
+        @param prior_distributions  A dictionary for a prior function for each variable.
+        @param likelihood           The likelihood function of the data given the parameter set.
+        """
         self.names = param_names
         self.bounds = param_bounds
         self.prior_distributions = prior_distributions
         self.likelihood = likelihood
 
     def log_prior(self, x):
+        """! The prior for the parameter set.
+        @param      The array of parameters.
+        @returns    The log-prior for the parameters.
+        """
         log_p = np.log(self.in_bounds(x), dtype="float")
         for i in range(len(x)):
             log_p += np.log(self.prior_distributions[self.param_names[i]])
         return log_p
 
     def log_likelihood(self, x):
+        """! The likelihood for the parameter set.
+        @param      The array of parameters.
+        @returns    The log-likelihood for the parameters.
+        """
         return self.likelihood(x)
 
 
 def nessai_sampler(model, n_iter, random_seed=0):
+    """! An AI sampler for a predefined model.
+
+    @param model        The defined Nessai model.
+    @param n_iter       The number of iterations for the algorithm.
+    @param random_seed  The random seed.
+
+    @returns            The generated sample set."""
     sampler = nessai.flowsampler.Flowsampler(
         model, output=None, seed=random_seed, nlive=n_iter
     )
