@@ -1,17 +1,28 @@
-name: S2_Coursework
+name: base
 channels:
   - dglteam
   - pytorch
   - conda-forge
   - defaults
 dependencies:
-  - pytest
+  - python=3.11
+  - conda==24.1.2
+  - setuptools
+  - pip
+  - wheel
+  - conda-content-trust
+  - conda-libmamba-solver
+  - ipykernel
   - black
-  - numpy
   - configparser
-  - matplotlib
-  - scipy
-  - pre-commit
-  - pandas
   - flake8
-prefix: C:\Users\Acer\anaconda3\envs\S2_Coursework
+  - matplotlib
+  - numpy
+  - pandas
+  - pre-commit
+  - pytest
+  - scipy
+  - emcee
+  - nessai
+  - corner
+prefix: /opt/conda
