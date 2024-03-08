@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import corner
 
 
 def trace_plot(chain, param_names, title=None, out_path=None):
@@ -40,6 +41,24 @@ def autocorr_plot(chain, param_names, title=None, out_path=None):
     plt.text(0.04, 0.5, "Autocorrelation coefficient", va="center", rotation="vertical")
     plt.title(title)
     plt.legend()
+    plt.tight_layout()
+    if out_path is None:
+        plt.show()
+    else:
+        plt.savefig(out_path, dpi=300)
+
+
+def corner_plot(samples, param_names, out_path=None):
+    """! Displays the 2-dimensional and 1-dimensional plot
+
+    @param chain        The isolated IID samples.
+    @param param_names  The names of the parameters.
+    @param title        Customizable plot title.
+    @param out_path     The output path of where to save the plot."""
+    corner.corner(
+        samples, labels=param_names, quantiles=[0.16, 0.5, 0.84], show_titles=True
+    )
+    plt.title("2D and 1D posterior distributions")
     plt.tight_layout()
     if out_path is None:
         plt.show()
