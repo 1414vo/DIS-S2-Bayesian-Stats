@@ -188,7 +188,7 @@ def execute_part_vii(data_path: str, output_path: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        prog="Part V Parameter Estimation",
+        prog="Part VII Parameter Estimation",
         description="Estimates the lighthouse location parameters using different MCMC algorithms.",
     )
     parser.add_argument("data_path", help="Location of the data file.")
