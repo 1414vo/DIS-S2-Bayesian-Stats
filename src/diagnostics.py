@@ -97,7 +97,7 @@ def kl_divergence(x: Iterable[float], pdf: Callable):
 
     # Estimate error based on MC integration
     kl_pq_err = np.std(
-        np.log(dist1_estimate(x) + 1e-10) - np.log(pdf(x) + 1e-10)
+        np.log(dist1_estimate(x.T) + 1e-10) - np.log(pdf(x) + 1e-10)
     ) / np.sqrt(len(x))
 
     return kl_pq, kl_pq_err
@@ -124,11 +124,14 @@ def distribution_summaries(
         # Measure KL divergence with true distributions
         true_kl_div = kl_divergence(samples[i], true_pdf)
         kl_div[i, -1] = str(true_kl_div[0]) + "+-" + str(true_kl_div[1])
+
         for j in range(i + 1, len(algo_names)):
             kl_results = symmetric_kl_divergence(samples[i], samples[j])
+
             # Register assymetric computations
             kl_div[i, j + 1] = str(kl_results[0]) + "+-" + str(kl_results[1])
             kl_div[j, i + 1] = str(kl_results[2]) + "+-" + str(kl_results[3])
+
             # Register symmetric measurement
             sym_kl_div[i, j + 1] = str(kl_results[4]) + "+-" + str(kl_results[5])
             sym_kl_div[j, i + 1] = str(kl_results[4]) + "+-" + str(kl_results[5])
