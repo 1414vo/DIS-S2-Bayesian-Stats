@@ -25,4 +25,6 @@ dependencies:
   - emcee
   - nessai
   - corner
+  - pymc
+  - tabulate
 prefix: /opt/conda
