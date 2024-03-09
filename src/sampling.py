@@ -130,7 +130,7 @@ def clean_chain(chain, burnin=0):
 
     @returns        The cleaned up samples, ensured to likely be i.i.d."""
     tau = [integrated_time(chain[:, i]) for i in range(chain.shape[1])]
-    thin = 2 * int(np.max(tau))
+    thin = max(2 * int(np.max(tau)) - 1, 1)
     samples = chain[burnin::thin, :]
 
     print(f"Final number of samples is {len(samples)}")

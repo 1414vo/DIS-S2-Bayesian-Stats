@@ -48,7 +48,7 @@ def autocorr_plot(chain, param_names, title=None, out_path=None):
         plt.savefig(out_path, dpi=300)
 
 
-def corner_plot(samples, param_names, out_path=None):
+def corner_plot(samples, param_names, title=None, out_path=None):
     """! Displays the 2-dimensional and 1-dimensional plot
 
     @param chain        The isolated IID samples.
@@ -58,7 +58,7 @@ def corner_plot(samples, param_names, out_path=None):
     corner.corner(
         samples, labels=param_names, quantiles=[0.16, 0.5, 0.84], show_titles=True
     )
-    plt.title("2D and 1D posterior distributions")
+    plt.title(title)
     plt.tight_layout()
     if out_path is None:
         plt.show()
