@@ -103,7 +103,15 @@ def kl_divergence(x: Iterable[float], pdf: Callable):
     return kl_pq, kl_pq_err
 
 
-def distribution_summaries(samples, algo_names: List[str], true_pdf):
+def distribution_summaries(
+    samples: Iterable, algo_names: List[str], true_pdf: Callable
+):
+    """! Displays the distribution distances using the KL divergence metric.
+
+    @param samples      A set of data samples from different sampling algorithms.
+    @param algo_names   The names of the sampling algorithms.
+    @param true_pdf     The function representing the target PDF.
+    """
     kl_div = np.zeros((len(algo_names), len(algo_names) + 2), dtype=object)
     sym_kl_div = np.zeros((len(algo_names), len(algo_names) + 1), dtype=object)
 
