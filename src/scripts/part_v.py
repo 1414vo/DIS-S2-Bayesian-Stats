@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.stats as stats
+import argparse
 from src.diagnostics import distribution_summaries, chain_convergence_diagnostics
 from src.plotting import autocorr_plot, corner_plot, trace_plot
 from src.sampling import (
@@ -30,6 +31,12 @@ def execute_part_v(data_path: str, output_path: str):
     # Summary statistics
     print(f"Accepted {mh_chain[1]} out of 500000 ({mh_chain[2] * 100: .1f}%)")
     mh_samples = clean_chain(mh_chain[0])
+
+    # Print parameter estimates
+    print(f"Esitmate for alpha: {mh_samples[:, 0].mean()} +- {mh_samples[:, 0].std()}")
+    print(f"Esitmate for beta: {mh_samples[:, 1].mean()} +- {mh_samples[:, 1].std()}")
+
+    # Convergence diagnostic information
     chains = mh_chain[1:].reshape(10, 50000, 2)
     chain_convergence_diagnostics(chains, mh_samples, param_names)
 
@@ -72,6 +79,15 @@ def execute_part_v(data_path: str, output_path: str):
         10, len(emcee_chain) // 10, 2
     )
 
+    # Print parameter estimates
+    print(
+        f"Esitmate for alpha: {emcee_samples[:, 0].mean()} +- {emcee_samples[:, 0].std()}"
+    )
+    print(
+        f"Esitmate for beta: {emcee_samples[:, 1].mean()} +- {emcee_samples[:, 1].std()}"
+    )
+
+    # Convergence diagnostic information
     chain_convergence_diagnostics(chains, emcee_samples, param_names)
 
     # Plots
@@ -117,6 +133,15 @@ def execute_part_v(data_path: str, output_path: str):
         10, len(nessai_chain) // 10, 2
     )
 
+    # Print parameter estimates
+    print(
+        f"Esitmate for alpha: {nessai_chain[:, 0].mean()} +- {nessai_chain[:, 0].std()}"
+    )
+    print(
+        f"Esitmate for beta: {nessai_chain[:, 1].mean()} +- {nessai_chain[:, 1].std()}"
+    )
+
+    # Convergence diagnostic information
     chain_convergence_diagnostics(chains, nessai_chain, param_names)
 
     # Plots
@@ -148,4 +173,13 @@ def execute_part_v(data_path: str, output_path: str):
 
 
 if __name__ == "__main__":
-    execute_part_v("../data/data.txt", "./out")
+    parser = argparse.ArgumentParser(
+        prog="Part V Parameter Estimation",
+        description="Estimates the lighthouse location parameters using different MCMC algorithms.",
+    )
+    parser.add_argument("data_path", help="Location of the data file.")
+    parser.add_argument("out_path", help="Location of the output folder.")
+
+    args = parser.parse_args()
+
+    execute_part_v(args.data_path, args.out_path)
