@@ -1,7 +1,8 @@
 import arviz
 import scipy
 import numpy as np
-from typing import Iterable, Callable
+from typing import Iterable, Callable, List
+from tabulate import tabulate
 
 
 def chain_convergence_diagnostics(
@@ -68,7 +69,14 @@ def symmetric_kl_divergence(x: Iterable, y: Iterable):
         np.log(dist2_estimate(y.T) + 1e-10) - np.log(dist1_estimate(y.T) + 1e-10)
     ) / np.sqrt(len(y))
 
-    return (kl_pq + kl_qp) / 2, np.sqrt(kl_pq_err**2 + kl_qp_err**2) / 2
+    return (
+        kl_pq,
+        kl_pq_err,
+        kl_qp,
+        kl_qp_err,
+        (kl_pq + kl_qp) / 2,
+        np.sqrt(kl_pq_err**2 + kl_qp_err**2) / 2,
+    )
 
 
 def kl_divergence(x: Iterable[float], pdf: Callable):
@@ -93,3 +101,38 @@ def kl_divergence(x: Iterable[float], pdf: Callable):
     ) / np.sqrt(len(x))
 
     return kl_pq, kl_pq_err
+
+
+def distribution_summaries(samples, algo_names: List[str], true_pdf):
+    kl_div = np.zeros((len(algo_names), len(algo_names) + 2), dtype=object)
+    sym_kl_div = np.zeros((len(algo_names), len(algo_names) + 1), dtype=object)
+
+    # Populate row indeces
+    for i in range(len(algo_names)):
+        kl_div[i][0] = algo_names[i]
+        sym_kl_div[i][0] = algo_names[i]
+
+    for i in range(len(algo_names)):
+        # Measure KL divergence with true distributions
+        true_kl_div = kl_divergence(samples[i], true_pdf)
+        kl_div[i, -1] = str(true_kl_div[0]) + "+-" + str(true_kl_div[1])
+        for j in range(i + 1, len(algo_names)):
+            kl_results = symmetric_kl_divergence(samples[i], samples[j])
+            # Register assymetric computations
+            kl_div[i, j + 1] = str(kl_results[0]) + "+-" + str(kl_results[1])
+            kl_div[j, i + 1] = str(kl_results[2]) + "+-" + str(kl_results[3])
+            # Register symmetric measurement
+            sym_kl_div[i, j + 1] = str(kl_results[4]) + "+-" + str(kl_results[5])
+            sym_kl_div[j, i + 1] = str(kl_results[4]) + "+-" + str(kl_results[5])
+
+    headers = [""] + algo_names + ["True"]
+
+    # Print Raw KL Divergence Measurements
+    table = tabulate(kl_div, headers=headers)
+    print("Kullback-Liebler Divergence metrics for samples:")
+    print(table)
+
+    # Print Symmetric KL Divergence Measurements
+    table = tabulate(sym_kl_div, headers=headers)
+    print("Symmetric Kullback-Liebler Divergence metrics for samples:")
+    print(table)
