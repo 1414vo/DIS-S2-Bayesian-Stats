@@ -57,7 +57,7 @@ def emcee_sampler(
     np.random.seed(random_seed)
     starting_points = np.vstack(
         [
-            prior_distributions[i].rvs(size=n_walkers)
+            prior_distributions[i].rvs(size=n_walkers, random_state=i)
             for i in range(len(prior_distributions))
         ]
     ).T
@@ -107,15 +107,16 @@ class NessaiModel(Model):
         return self.likelihood(**{name: x[name] for name in self.names})
 
 
-def nessai_sampler(model, n_iter, random_seed=0):
+def nessai_sampler(model, n_iter, random_seed=0, output_path="./"):
     """! An AI sampler for a predefined model.
 
     @param model        The defined Nessai model.
     @param n_iter       The number of iterations for the algorithm.
     @param random_seed  The random seed.
+    @param output_path  The output path for automatic diagnostics of the sampler.
 
     @returns            The generated sample set."""
-    sampler = FlowSampler(model, output="./", seed=random_seed, nlive=n_iter)
+    sampler = FlowSampler(model, output=output_path, seed=random_seed, nlive=n_iter)
     sampler.run()
     samples = np.vstack([sampler.posterior_samples[param] for param in model.names]).T
 

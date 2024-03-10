@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.stats as stats
 import argparse
+import warnings
 from src.diagnostics import distribution_summaries, chain_convergence_diagnostics
 from src.plotting import autocorr_plot, corner_plot, trace_plot
 from src.sampling import (
@@ -14,6 +15,9 @@ from src.distributions import simple_posterior
 
 
 def execute_part_v(data_path: str, output_path: str):
+    # Suppress warnings (which are irrelevant to the program's execution)
+    warnings.simplefilter("ignore")
+
     data = np.loadtxt(data_path)[:, 0]
     true_pdf = lambda params: simple_posterior(x=data, alpha=params[0], beta=params[1])
     log_pdf = lambda alpha, beta: simple_posterior(x=data, alpha=alpha, beta=beta)
@@ -26,10 +30,10 @@ def execute_part_v(data_path: str, output_path: str):
 
     # Generate chain
     cov_matrix = np.eye(2)
-    mh_chain = metropolis_hastings([0, 1], log_pdf, cov_matrix, n_iter=500000)
+    mh_chain = metropolis_hastings([0, 1], log_pdf, cov_matrix, n_iter=100000)
 
     # Summary statistics
-    print(f"Accepted {mh_chain[1]} out of 500000 ({mh_chain[2] * 100: .1f}%)")
+    print(f"Accepted {mh_chain[1]} out of 100000 ({mh_chain[2] * 100: .1f}%)")
     mh_samples = clean_chain(mh_chain[0])
 
     # Print parameter estimates
@@ -37,12 +41,13 @@ def execute_part_v(data_path: str, output_path: str):
     print(f"Esitmate for beta: {mh_samples[:, 1].mean()} +- {mh_samples[:, 1].std()}")
 
     # Convergence diagnostic information
-    chains = mh_chain[1:].reshape(10, 50000, 2)
+    chains = mh_chain[0][1:].reshape(10, 10000, 2)
+    print(f"Number of samples: {len(mh_samples)}")
     chain_convergence_diagnostics(chains, mh_samples, param_names)
 
     # Plots
     trace_plot(
-        mh_chain,
+        mh_chain[0],
         param_names,
         title="Trace plot for Metropolis-Hastings sampling",
         out_path=f"{output_path}/mh_trace.png",
@@ -54,14 +59,15 @@ def execute_part_v(data_path: str, output_path: str):
         out_path=f"{output_path}/mh_corner.png",
     )
     autocorr_plot(
-        mh_chain,
+        mh_chain[0],
         param_names,
+        max_lag=200,
         title="Autocorrelations in Metropolis-Hastings sampling",
         out_path=f"{output_path}/mh_autocorr.png",
     )
 
     # Emcee sampler
-    print("EMCEE sampler")
+    print("\nEMCEE sampler")
     print("---------------------------")
 
     # Explicitly define distributions for sampling starting points
@@ -72,7 +78,7 @@ def execute_part_v(data_path: str, output_path: str):
 
     # Generate chain
     emcee_chain = emcee_sampler(
-        log_pdf, starting_distributions, n_iter=10000, n_dim=2, n_walkers=10
+        true_pdf, starting_distributions, n_iter=10000, n_dim=2, n_walkers=10
     )
     emcee_samples = clean_chain(emcee_chain)
     chains = emcee_chain[: len(emcee_chain) // 10 * 10].reshape(
@@ -88,6 +94,7 @@ def execute_part_v(data_path: str, output_path: str):
     )
 
     # Convergence diagnostic information
+    print(f"Number of samples: {len(emcee_samples)}")
     chain_convergence_diagnostics(chains, emcee_samples, param_names)
 
     # Plots
@@ -111,7 +118,7 @@ def execute_part_v(data_path: str, output_path: str):
     )
 
     # Nessai Sampler
-    print("Nessai sampler")
+    print("\nNessai sampler")
     print("---------------------------")
 
     # The Nessai model requires us to define the priors and likelihood explicitly instead of being given
@@ -128,7 +135,9 @@ def execute_part_v(data_path: str, output_path: str):
         ),
     )
     # Generate chain
-    nessai_chain = nessai_sampler(nessai_model, n_iter=10000)
+    nessai_chain = nessai_sampler(
+        nessai_model, n_iter=1000, output_path=f"{output_path}/nessai_p5"
+    )
     chains = nessai_chain[: len(nessai_chain) // 10 * 10].reshape(
         10, len(nessai_chain) // 10, 2
     )
@@ -142,6 +151,7 @@ def execute_part_v(data_path: str, output_path: str):
     )
 
     # Convergence diagnostic information
+    print(f"Number of samples: {len(nessai_chain)}")
     chain_convergence_diagnostics(chains, nessai_chain, param_names)
 
     # Plots
@@ -163,7 +173,7 @@ def execute_part_v(data_path: str, output_path: str):
         title="Autocorrelations in Nessai sampling",
         out_path=f"{output_path}/nessai_autocorr.png",
     )
-
+    print("\n")
     # Compute KL divergences for comparison of distributions
     distribution_summaries(
         samples=[mh_samples, emcee_samples, nessai_chain],

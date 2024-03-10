@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.stats as stats
 import argparse
+import warnings
 from src.diagnostics import distribution_summaries, chain_convergence_diagnostics
 from src.plotting import autocorr_plot, corner_plot, trace_plot
 from src.sampling import (
@@ -14,6 +15,9 @@ from src.distributions import intensity_posterior, intensity_likelihood
 
 
 def execute_part_vii(data_path: str, output_path: str):
+    # Suppress warnings (which are irrelevant to the program's execution)
+    warnings.simplefilter("ignore")
+
     x = np.loadtxt(data_path)[:, 0]
     log_i = np.loadtxt(data_path)[:, 1]
     true_pdf = lambda params: intensity_posterior(
@@ -43,12 +47,13 @@ def execute_part_vii(data_path: str, output_path: str):
     print(f"Estimate for I_0: {mh_samples[:, 2].mean()} +- {mh_samples[:, 2].std()}")
 
     # Convergence diagnostic information
-    chains = mh_chain[1:].reshape(10, 50000, 3)
+    chains = mh_chain[0][1:].reshape(10, 50000, 3)
+    print(f"Number of samples: {len(mh_samples)}")
     chain_convergence_diagnostics(chains, mh_samples, param_names)
 
     # Plots
     trace_plot(
-        mh_chain,
+        mh_chain[0],
         param_names,
         title="Trace plot for Metropolis-Hastings sampling",
         out_path=f"{output_path}/mh_trace_w_intensity.png",
@@ -60,7 +65,7 @@ def execute_part_vii(data_path: str, output_path: str):
         out_path=f"{output_path}/mh_corner_w_intensity.png",
     )
     autocorr_plot(
-        mh_chain,
+        mh_chain[0],
         param_names,
         title="Autocorrelations in Metropolis-Hastings sampling",
         out_path=f"{output_path}/mh_autocorr_w_intensity.png",
@@ -79,7 +84,7 @@ def execute_part_vii(data_path: str, output_path: str):
 
     # Generate chain
     emcee_chain = emcee_sampler(
-        log_pdf, starting_distributions, n_iter=10000, n_dim=3, n_walkers=10
+        true_pdf, starting_distributions, n_iter=10000, n_dim=3, n_walkers=10
     )
     emcee_samples = clean_chain(emcee_chain)
     chains = emcee_chain[: len(emcee_chain) // 10 * 10].reshape(
@@ -98,6 +103,7 @@ def execute_part_vii(data_path: str, output_path: str):
     )
 
     # Convergence diagnostic information
+    print(f"Number of samples: {len(emcee_samples)}")
     chain_convergence_diagnostics(chains, emcee_samples, param_names)
 
     # Plots
@@ -139,7 +145,9 @@ def execute_part_vii(data_path: str, output_path: str):
         ),
     )
     # Generate chain
-    nessai_chain = nessai_sampler(nessai_model, n_iter=10000)
+    nessai_chain = nessai_sampler(
+        nessai_model, n_iter=10000, output_path=f"{output_path}/nessai_p7"
+    )
     chains = nessai_chain[: len(nessai_chain) // 10 * 10].reshape(
         10, len(nessai_chain) // 10, 3
     )
@@ -156,6 +164,7 @@ def execute_part_vii(data_path: str, output_path: str):
     )
 
     # Convergence diagnostic information
+    print(f"Number of samples: {len(nessai_chain)}")
     chain_convergence_diagnostics(chains, nessai_chain, param_names)
 
     # Plots
