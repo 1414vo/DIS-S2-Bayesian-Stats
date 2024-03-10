@@ -27,10 +27,10 @@ def chain_convergence_diagnostics(
     )
 
     # Compute Gelman-Rubin Diagnostic (R hat)
-    r_hats = arviz.diagnostics.rhat(dataset)
+    r_hats = arviz.rhat(dataset)
     for param in param_names:
         print(
-            f'Measured Gelman-Rubin statistic for parameter "{param}": {r_hats[param]}'
+            f'Measured Gelman-Rubin statistic for parameter "{param}": {r_hats[param].values}'
         )
 
 
@@ -79,30 +79,6 @@ def symmetric_kl_divergence(x: Iterable, y: Iterable):
     )
 
 
-def kl_divergence(x: Iterable[float], pdf: Callable):
-    r"""r!Computes the  KL Divergence between a sample and a true distribution.
-    The KL Divergence is given by:
-    \f$KL(P||Q) = \int P(x)\log{\frac{P(x)}{Q(x)}dx}\f
-
-    @param x    The extracted sample.
-    @param pdf  The target probability distribution.
-
-    @returns    The KL Divergence and the associated error from the Monte Carlo integration
-    """
-    # Approximate distributions using Kernel Density Estimation
-    dist1_estimate = scipy.stats.gaussian_kde(x.T)
-
-    # Monte carlo integration for KL divergence
-    kl_pq = np.mean(np.log(dist1_estimate(x.T) + 1e-10) - np.log(pdf(x) + 1e-10))
-
-    # Estimate error based on MC integration
-    kl_pq_err = np.std(
-        np.log(dist1_estimate(x.T) + 1e-10) - np.log(pdf(x) + 1e-10)
-    ) / np.sqrt(len(x))
-
-    return kl_pq, kl_pq_err
-
-
 def distribution_summaries(
     samples: Iterable, algo_names: List[str], true_pdf: Callable
 ):
@@ -112,7 +88,7 @@ def distribution_summaries(
     @param algo_names   The names of the sampling algorithms.
     @param true_pdf     The function representing the target PDF.
     """
-    kl_div = np.zeros((len(algo_names), len(algo_names) + 2), dtype=object)
+    kl_div = np.zeros((len(algo_names), len(algo_names) + 1), dtype=object)
     sym_kl_div = np.zeros((len(algo_names), len(algo_names) + 1), dtype=object)
 
     # Populate row indeces
@@ -122,9 +98,6 @@ def distribution_summaries(
 
     for i in range(len(algo_names)):
         # Measure KL divergence with true distributions
-        true_kl_div = kl_divergence(samples[i], true_pdf)
-        kl_div[i, -1] = str(true_kl_div[0]) + "+-" + str(true_kl_div[1])
-
         for j in range(i + 1, len(algo_names)):
             kl_results = symmetric_kl_divergence(samples[i], samples[j])
 
@@ -136,7 +109,7 @@ def distribution_summaries(
             sym_kl_div[i, j + 1] = str(kl_results[4]) + "+-" + str(kl_results[5])
             sym_kl_div[j, i + 1] = str(kl_results[4]) + "+-" + str(kl_results[5])
 
-    headers = [""] + algo_names + ["True"]
+    headers = [""] + algo_names
 
     # Print Raw KL Divergence Measurements
     table = tabulate(kl_div, headers=headers)

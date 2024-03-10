@@ -1,7 +1,6 @@
 import math
 import numpy as np
-import scipy
-from src.diagnostics import symmetric_kl_divergence, kl_divergence
+from src.diagnostics import symmetric_kl_divergence
 
 
 def test_sample_kl_divergence():
@@ -27,15 +26,3 @@ def test_sample_kl_divergence():
     res = symmetric_kl_divergence(sample_1, sample_2)
     assert res[0] - 2 * res[1] < true_kl_1 < res[0] + 2 * res[1]
     assert res[2] - 2 * res[3] < true_kl_2 < res[2] + 2 * res[3]
-
-
-def test_pdf_kl_divergence():
-    # Sample from standard normal distribution
-    x = np.random.randn(1, 10000).T
-
-    # Define true_pdf
-    true_pdf = scipy.stats.norm.pdf
-    results = kl_divergence(x, true_pdf)
-
-    # Check if distribution estimation is close
-    assert results[0] - results[1] < 0 < results[0] + results[1]
