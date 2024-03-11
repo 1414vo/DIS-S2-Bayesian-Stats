@@ -14,7 +14,7 @@ from src.sampling import (
 from src.distributions import intensity_posterior, intensity_likelihood
 
 
-def execute_part_vii(data_path: str, output_path: str):
+def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
     # Suppress warnings (which are irrelevant to the program's execution)
     warnings.simplefilter("ignore")
 
@@ -34,11 +34,11 @@ def execute_part_vii(data_path: str, output_path: str):
     print("---------------------------")
 
     # Generate chain
-    cov_matrix = np.eye(3)
-    mh_chain = metropolis_hastings([0, 1, 1], log_pdf, cov_matrix, n_iter=500000)
+    cov_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 7000]])
+    mh_chain = metropolis_hastings([0, 1, 1], log_pdf, cov_matrix, n_iter=1000000)
 
     # Summary statistics
-    print(f"Accepted {mh_chain[1]} out of 500000 ({mh_chain[2] * 100: .1f}%)")
+    print(f"Accepted {mh_chain[1]} out of 1000000 ({mh_chain[2] * 100: .1f}%)")
     mh_samples = clean_chain(mh_chain[0])
 
     # Print parameter estimates
@@ -47,7 +47,7 @@ def execute_part_vii(data_path: str, output_path: str):
     print(f"Estimate for I_0: {mh_samples[:, 2].mean()} +- {mh_samples[:, 2].std()}")
 
     # Convergence diagnostic information
-    chains = mh_chain[0][1:].reshape(10, 50000, 3)
+    chains = mh_chain[0][1:].reshape(10, 100000, 3)
     print(f"Number of samples: {len(mh_samples)}")
     chain_convergence_diagnostics(chains, mh_samples, param_names)
 
@@ -72,23 +72,23 @@ def execute_part_vii(data_path: str, output_path: str):
     )
 
     # Emcee sampler
-    print("EMCEE sampler")
+    print("\nEMCEE sampler")
     print("---------------------------")
 
     # Explicitly define distributions for sampling starting points
     starting_distributions = [
         stats.uniform(loc=-1, scale=2),
         stats.uniform(loc=1e-2, scale=10),
-        stats.loguniform(a=1e-5, b=100),
+        stats.loguniform(a=1e-5, b=1000),
     ]
 
     # Generate chain
     emcee_chain = emcee_sampler(
-        true_pdf, starting_distributions, n_iter=10000, n_dim=3, n_walkers=10
+        true_pdf, starting_distributions, n_iter=10000, n_dim=3, n_walkers=100
     )
     emcee_samples = clean_chain(emcee_chain)
-    chains = emcee_chain[: len(emcee_chain) // 10 * 10].reshape(
-        10, len(emcee_chain) // 10, 3
+    chains = emcee_chain[: len(emcee_chain) // 100 * 100].reshape(
+        100, len(emcee_chain) // 100, 3
     )
 
     # Print parameter estimates
@@ -127,18 +127,18 @@ def execute_part_vii(data_path: str, output_path: str):
     )
 
     # Nessai Sampler
-    print("Nessai sampler")
+    print("\nNessai sampler")
     print("---------------------------")
 
     # The Nessai model requires us to define the priors and likelihood explicitly instead of being given
     # the unnormalized posterior
     nessai_model = NessaiModel(
         param_names=["alpha", "beta", "i_0"],
-        param_bounds={"alpha": [-20, 20], "beta": [0, 50], "i_0": [1e-5, 100]},
+        param_bounds={"alpha": [-20, 20], "beta": [0, 50], "i_0": [1e-5, 1000]},
         prior_distributions={
             "alpha": stats.uniform(loc=-20, scale=40).pdf,
             "beta": stats.uniform(loc=0, scale=50).pdf,
-            "i_0": stats.loguniform(a=1e-5, b=100).pdf,
+            "i_0": stats.loguniform(a=1e-5, b=1000).pdf,
         },
         likelihood=lambda alpha, beta, i_0: intensity_likelihood(
             x=x, log_i=log_i, alpha=alpha, beta=beta, i_0=i_0
@@ -186,12 +186,12 @@ def execute_part_vii(data_path: str, output_path: str):
         title="Autocorrelations in Nessai sampling",
         out_path=f"{output_path}/nessai_autocorr_w_intensity.png",
     )
-
+    print("\n")
     # Compute KL divergences for comparison of distributions
     distribution_summaries(
         samples=[mh_samples, emcee_samples, nessai_chain],
         algo_names=["Metropolis-Hastings", "Emcee", "Nessai"],
-        true_pdf=true_pdf,
+        do_kld=do_kld,
     )
 
 
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("data_path", help="Location of the data file.")
     parser.add_argument("out_path", help="Location of the output folder.")
-
+    parser.add_argument("--kld", dest="kld", default=False, action="store_true")
     args = parser.parse_args()
 
-    execute_part_vii(args.data_path, args.out_path)
+    execute_part_vii(args.data_path, args.out_path, args.kld)

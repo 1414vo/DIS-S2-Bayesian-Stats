@@ -14,7 +14,7 @@ from src.sampling import (
 from src.distributions import simple_posterior
 
 
-def execute_part_v(data_path: str, output_path: str):
+def execute_part_v(data_path: str, output_path: str, do_kld: bool):
     # Suppress warnings (which are irrelevant to the program's execution)
     warnings.simplefilter("ignore")
 
@@ -178,7 +178,7 @@ def execute_part_v(data_path: str, output_path: str):
     distribution_summaries(
         samples=[mh_samples, emcee_samples, nessai_chain],
         algo_names=["Metropolis-Hastings", "Emcee", "Nessai"],
-        true_pdf=true_pdf,
+        do_kld=do_kld,
     )
 
 
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("data_path", help="Location of the data file.")
     parser.add_argument("out_path", help="Location of the output folder.")
-
+    parser.add_argument("--kld", dest="kld", default=False, action="store_true")
     args = parser.parse_args()
 
-    execute_part_v(args.data_path, args.out_path)
+    execute_part_v(args.data_path, args.out_path, args.kld)

@@ -1,7 +1,7 @@
 import arviz
 import scipy
 import numpy as np
-from typing import Iterable, Callable, List
+from typing import Iterable, List
 from tabulate import tabulate
 
 
@@ -80,14 +80,37 @@ def symmetric_kl_divergence(x: Iterable, y: Iterable):
 
 
 def distribution_summaries(
-    samples: Iterable, algo_names: List[str], true_pdf: Callable
+    samples: Iterable, algo_names: List[str], do_kld: bool = False
 ):
-    """! Displays the distribution distances using the KL divergence metric.
+    """! Displays the distribution relationships using the KS test and the
+    KL divergence metric.
 
     @param samples      A set of data samples from different sampling algorithms.
     @param algo_names   The names of the sampling algorithms.
     @param true_pdf     The function representing the target PDF.
+    @param do_kld       Whether to execute the KLD part of the analysis, which is
+    computationally expensive.
     """
+    ks_test = np.zeros((len(algo_names), len(algo_names) + 1), dtype=object)
+
+    for i in range(len(algo_names)):
+        ks_test[i][0] = algo_names[i]
+
+    for i in range(len(algo_names)):
+        for j in range(i + 1, len(algo_names)):
+            ks_results = scipy.stats.ks_2samp(samples[i], samples[j])
+            ks_test[i][j + 1] = str(ks_results.pvalue)
+            ks_test[j][i + 1] = str(ks_results.statistic)
+
+    # Print KS test results
+    headers = ["stat/p-value"] + algo_names
+    table = tabulate(ks_test, headers=headers)
+    print("Kolmogorov-Smirnov test for sample distributions:")
+    print(table)
+
+    if not do_kld:
+        return
+
     kl_div = np.zeros((len(algo_names), len(algo_names) + 1), dtype=object)
     sym_kl_div = np.zeros((len(algo_names), len(algo_names) + 1), dtype=object)
 
@@ -97,7 +120,6 @@ def distribution_summaries(
         sym_kl_div[i][0] = algo_names[i]
 
     for i in range(len(algo_names)):
-        # Measure KL divergence with true distributions
         for j in range(i + 1, len(algo_names)):
             kl_results = symmetric_kl_divergence(samples[i], samples[j])
 
