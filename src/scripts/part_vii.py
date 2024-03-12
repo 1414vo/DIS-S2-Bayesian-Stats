@@ -35,10 +35,10 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
 
     # Generate chain
     cov_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 7000]])
-    mh_chain = metropolis_hastings([0, 1, 1], log_pdf, cov_matrix, n_iter=1000000)
+    mh_chain = metropolis_hastings([0, 1, 1], log_pdf, cov_matrix, n_iter=500000)
 
     # Summary statistics
-    print(f"Accepted {mh_chain[1]} out of 1000000 ({mh_chain[2] * 100: .1f}%)")
+    print(f"Accepted {mh_chain[1]} out of 500000 ({mh_chain[2] * 100: .1f}%)")
     mh_samples = clean_chain(mh_chain[0])
 
     # Print parameter estimates
@@ -47,7 +47,7 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
     print(f"Estimate for I_0: {mh_samples[:, 2].mean()} +- {mh_samples[:, 2].std()}")
 
     # Convergence diagnostic information
-    chains = mh_chain[0][1:].reshape(10, 100000, 3)
+    chains = mh_chain[0][1:].reshape(10, 50000, 3)
     print(f"Number of samples: {len(mh_samples)}")
     chain_convergence_diagnostics(chains, mh_samples, param_names)
 
@@ -69,6 +69,7 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
         param_names,
         title="Autocorrelations in Metropolis-Hastings sampling",
         out_path=f"{output_path}/mh_autocorr_w_intensity.png",
+        max_lag=200,
     )
 
     # Emcee sampler
@@ -84,11 +85,11 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
 
     # Generate chain
     emcee_chain = emcee_sampler(
-        true_pdf, starting_distributions, n_iter=10000, n_dim=3, n_walkers=100
+        true_pdf, starting_distributions, n_iter=10000, n_dim=3, n_walkers=20
     )
     emcee_samples = clean_chain(emcee_chain)
-    chains = emcee_chain[: len(emcee_chain) // 100 * 100].reshape(
-        100, len(emcee_chain) // 100, 3
+    chains = emcee_chain[: len(emcee_chain) // 20 * 20].reshape(
+        20, len(emcee_chain) // 20, 3
     )
 
     # Print parameter estimates

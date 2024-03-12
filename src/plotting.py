@@ -18,7 +18,12 @@ def trace_plot(chain, param_names, title=None, out_path=None, max_len=5000):
         plt.plot(
             chain[:max_len, i] / chain[:max_len, i].max() + i, label=param, alpha=0.35
         )
-        plt.axhline(i, color="gray", linestyle="--", alpha=0.7)
+        plt.axhline(
+            i + chain[:max_len, i].mean() / chain[:max_len, i].max(),
+            color="gray",
+            linestyle="--",
+            alpha=0.7,
+        )
 
     plt.xlabel("Chain index")
     plt.ylabel("Parameter Value (max-scaled)")
@@ -122,6 +127,59 @@ def plot_cauchy_convergence(out_path=None):
     plt.tight_layout()
     plt.rcParams.update({"font.size": 10})
     # Save/plot figure
+    if out_path is None:
+        plt.show()
+    else:
+        plt.savefig(out_path, dpi=300)
+
+
+def compare_prior(prior_pdfs, samples, param_names, x_ranges, bins=30, out_path=None):
+    """! Compares multiple parameters' prior distributions with samples drawn for them.
+
+    @param prior_pdfs   The priors of each parameter given as a function.
+    @param samples      The drawn samples for each parameter.
+    @param param_names  The names of the parameters.
+    @param x_ranges     The ranges of the parameters for the sake of the plot.
+    @param bins         The number of bins for each histogram.
+    @param out_path     The output path of where to save the plot."""
+
+    num_params = len(prior_pdfs)
+    plt.figure(figsize=(12, 4 * num_params))
+
+    for i in range(num_params):
+        ax = plt.subplot(num_params, 1, i + 1)
+
+        x_values = np.linspace(x_ranges[i][0], x_ranges[i][1], 1000)
+        pdf_values = prior_pdfs[i](x_values)
+
+        # Plot the prior distribution PDF
+        ax.plot(x_values, pdf_values, label=f"{param_names[i]} Prior PDF", lw=2)
+
+        # Plot the histogram of the samples
+        ax.hist(
+            samples[i],
+            bins=bins,
+            density=True,
+            alpha=0.5,
+            label=f"{param_names[i]} Sample Histogram",
+        )
+
+        # Plot KDE of the samples
+        kde = scipy.stats.gaussian_kde(samples[i])
+        ax.plot(
+            x_values,
+            kde(x_values),
+            label=f"{param_names[i]} Sample KDE",
+            color="tab:red",
+        )
+
+        ax.set_title(f"Prior and sample comparison for f{param_names[i]}")
+        ax.set_xlabel(param_names[i])
+        ax.set_ylabel("Density")
+        ax.legend()
+
+    plt.tight_layout()
+
     if out_path is None:
         plt.show()
     else:
