@@ -58,7 +58,7 @@ def intensity_posterior(
     alpha_max=20,
     beta_min=0,
     beta_max=50,
-    i_min=1e-5,
+    i_min=1e-2,
     i_max=1000,
 ):
     """!Defines the non-normalized posterior for the detection problem,

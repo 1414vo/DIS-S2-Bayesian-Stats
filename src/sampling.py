@@ -64,7 +64,8 @@ def emcee_sampler(
 
     sampler = EnsembleSampler(n_walkers, n_dim, log_pdf)
     sampler.run_mcmc(starting_points, n_iter)
-    return sampler.get_chain(flat=True)
+    chains = sampler.get_chain()
+    return np.hstack([*chains]).reshape(-1, chains[0].shape[1])
 
 
 class NessaiModel(Model):

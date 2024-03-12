@@ -3,7 +3,7 @@ import scipy.stats as stats
 import argparse
 import warnings
 from src.diagnostics import distribution_summaries, chain_convergence_diagnostics
-from src.plotting import autocorr_plot, corner_plot, trace_plot
+from src.plotting import autocorr_plot, corner_plot, trace_plot, compare_prior
 from src.sampling import (
     metropolis_hastings,
     emcee_sampler,
@@ -27,6 +27,17 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
         x=x, log_i=log_i, alpha=alpha, beta=beta, i_0=i_0
     )
     param_names = [r"$\alpha$", r"$\beta$", r"$I_0$"]
+    prior_distributions = [
+        stats.uniform(loc=-20, scale=40),
+        stats.uniform(loc=0, scale=50),
+        stats.loguniform(a=1e-2, b=1000),
+    ]
+    x_ranges = [
+        [-5, 5],
+        [0, 12],
+        [1, 1000],
+    ]
+    y_scales = ["linear", "linear", "log"]
 
     # Metropolis-Hastings sampling (NOTE: Takes up to 10 minutes)
     # Use identity covariance for our proposal distribution
@@ -71,6 +82,14 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
         out_path=f"{output_path}/mh_autocorr_w_intensity.png",
         max_lag=200,
     )
+    compare_prior(
+        prior_distributions,
+        mh_samples.T,
+        param_names,
+        x_ranges,
+        y_scales,
+        out_path=f"{output_path}/mh_prior_comparison_w_intensity.png",
+    )
 
     # Emcee sampler
     print("\nEMCEE sampler")
@@ -80,12 +99,12 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
     starting_distributions = [
         stats.uniform(loc=-1, scale=2),
         stats.uniform(loc=1e-2, scale=10),
-        stats.loguniform(a=1e-5, b=1000),
+        stats.loguniform(a=1e-2, b=1000),
     ]
 
     # Generate chain
     emcee_chain = emcee_sampler(
-        true_pdf, starting_distributions, n_iter=10000, n_dim=3, n_walkers=20
+        true_pdf, starting_distributions, n_iter=25000, n_dim=3, n_walkers=20
     )
     emcee_samples = clean_chain(emcee_chain)
     chains = emcee_chain[: len(emcee_chain) // 20 * 20].reshape(
@@ -126,6 +145,14 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
         title="Autocorrelations in Emcee Ensembler sampling",
         out_path=f"{output_path}/emcee_autocorr_w_intensity.png",
     )
+    compare_prior(
+        prior_distributions,
+        emcee_samples.T,
+        param_names,
+        x_ranges,
+        y_scales,
+        out_path=f"{output_path}/emcee_prior_comparison_w_intensity.png",
+    )
 
     # Nessai Sampler
     print("\nNessai sampler")
@@ -139,7 +166,7 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
         prior_distributions={
             "alpha": stats.uniform(loc=-20, scale=40).pdf,
             "beta": stats.uniform(loc=0, scale=50).pdf,
-            "i_0": stats.loguniform(a=1e-5, b=1000).pdf,
+            "i_0": stats.loguniform(a=1e-2, b=1000).pdf,
         },
         likelihood=lambda alpha, beta, i_0: intensity_likelihood(
             x=x, log_i=log_i, alpha=alpha, beta=beta, i_0=i_0
@@ -186,6 +213,14 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
         param_names,
         title="Autocorrelations in Nessai sampling",
         out_path=f"{output_path}/nessai_autocorr_w_intensity.png",
+    )
+    compare_prior(
+        prior_distributions,
+        nessai_chain.T,
+        param_names,
+        x_ranges,
+        y_scales,
+        out_path=f"{output_path}/nessai_prior_comparison_w_intensity.png",
     )
     print("\n")
     # Compute KL divergences for comparison of distributions

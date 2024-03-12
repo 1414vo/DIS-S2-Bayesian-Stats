@@ -133,13 +133,16 @@ def plot_cauchy_convergence(out_path=None):
         plt.savefig(out_path, dpi=300)
 
 
-def compare_prior(prior_pdfs, samples, param_names, x_ranges, bins=30, out_path=None):
+def compare_prior(
+    prior_pdfs, samples, param_names, x_ranges, y_scales, bins=30, out_path=None
+):
     """! Compares multiple parameters' prior distributions with samples drawn for them.
 
     @param prior_pdfs   The priors of each parameter given as a function.
     @param samples      The drawn samples for each parameter.
     @param param_names  The names of the parameters.
     @param x_ranges     The ranges of the parameters for the sake of the plot.
+    @param y_scales     How the y-axis should be scaled.
     @param bins         The number of bins for each histogram.
     @param out_path     The output path of where to save the plot."""
 
@@ -150,7 +153,7 @@ def compare_prior(prior_pdfs, samples, param_names, x_ranges, bins=30, out_path=
         ax = plt.subplot(num_params, 1, i + 1)
 
         x_values = np.linspace(x_ranges[i][0], x_ranges[i][1], 1000)
-        pdf_values = prior_pdfs[i](x_values)
+        pdf_values = prior_pdfs[i].pdf(x_values)
 
         # Plot the prior distribution PDF
         ax.plot(x_values, pdf_values, label=f"{param_names[i]} Prior PDF", lw=2)
@@ -166,14 +169,17 @@ def compare_prior(prior_pdfs, samples, param_names, x_ranges, bins=30, out_path=
 
         # Plot KDE of the samples
         kde = scipy.stats.gaussian_kde(samples[i])
+        kde_values = kde(x_values)
+        kde_values = np.where(kde_values < 1e-6, 1e-6, kde_values)
         ax.plot(
             x_values,
-            kde(x_values),
+            kde_values,
             label=f"{param_names[i]} Sample KDE",
             color="tab:red",
         )
 
-        ax.set_title(f"Prior and sample comparison for f{param_names[i]}")
+        ax.set_title(f"Prior and sample comparison for {param_names[i]}")
+        ax.set_yscale(y_scales[i])
         ax.set_xlabel(param_names[i])
         ax.set_ylabel("Density")
         ax.legend()

@@ -3,7 +3,7 @@ import scipy.stats as stats
 import argparse
 import warnings
 from src.diagnostics import distribution_summaries, chain_convergence_diagnostics
-from src.plotting import autocorr_plot, corner_plot, trace_plot
+from src.plotting import autocorr_plot, corner_plot, trace_plot, compare_prior
 from src.sampling import (
     metropolis_hastings,
     emcee_sampler,
@@ -22,6 +22,15 @@ def execute_part_v(data_path: str, output_path: str, do_kld: bool):
     true_pdf = lambda params: simple_posterior(x=data, alpha=params[0], beta=params[1])
     log_pdf = lambda alpha, beta: simple_posterior(x=data, alpha=alpha, beta=beta)
     param_names = [r"$\alpha$", r"$\beta$"]
+    prior_distributions = [
+        stats.uniform(loc=-20, scale=40),
+        stats.uniform(loc=0, scale=50),
+    ]
+    x_ranges = [
+        [-4, 4],
+        [0, 6],
+    ]
+    y_scales = ["linear", "linear"]
 
     # Metropolis-Hastings sampling (NOTE: Takes up to 10 minutes)
     # Use identity covariance for our proposal distribution
@@ -65,6 +74,14 @@ def execute_part_v(data_path: str, output_path: str, do_kld: bool):
         title="Autocorrelations in Metropolis-Hastings sampling",
         out_path=f"{output_path}/mh_autocorr.png",
     )
+    compare_prior(
+        prior_distributions,
+        mh_samples.T,
+        param_names,
+        x_ranges,
+        y_scales,
+        out_path=f"{output_path}/mh_prior_comparison.png",
+    )
 
     # Emcee sampler
     print("\nEMCEE sampler")
@@ -78,7 +95,7 @@ def execute_part_v(data_path: str, output_path: str, do_kld: bool):
 
     # Generate chain
     emcee_chain = emcee_sampler(
-        true_pdf, starting_distributions, n_iter=10000, n_dim=2, n_walkers=10
+        true_pdf, starting_distributions, n_iter=50000, n_dim=2, n_walkers=10
     )
     emcee_samples = clean_chain(emcee_chain)
     chains = emcee_chain[: len(emcee_chain) // 10 * 10].reshape(
@@ -115,6 +132,14 @@ def execute_part_v(data_path: str, output_path: str, do_kld: bool):
         param_names,
         title="Autocorrelations in Emcee Ensembler sampling",
         out_path=f"{output_path}/emcee_autocorr.png",
+    )
+    compare_prior(
+        prior_distributions,
+        emcee_samples.T,
+        param_names,
+        x_ranges,
+        y_scales,
+        out_path=f"{output_path}/emcee_prior_comparison.png",
     )
 
     # Nessai Sampler
@@ -172,6 +197,14 @@ def execute_part_v(data_path: str, output_path: str, do_kld: bool):
         param_names,
         title="Autocorrelations in Nessai sampling",
         out_path=f"{output_path}/nessai_autocorr.png",
+    )
+    compare_prior(
+        prior_distributions,
+        nessai_chain.T,
+        param_names,
+        x_ranges,
+        y_scales,
+        out_path=f"{output_path}/nessai_prior_comparison.png",
     )
     print("\n")
     # Compute KL divergences for comparison of distributions
