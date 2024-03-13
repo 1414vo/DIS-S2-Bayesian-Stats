@@ -1,3 +1,16 @@
+"""!
+@file   diagnostics.py
+@brief  This file contains functions for computing and displaying diagnostic statistics for
+Markov chain convergence and sample analysis.
+
+Details include the application of the Gelman-Rubin statistic, measuring the effective fraction of samples,
+computing symmetric Kullback-Leibler (KL) divergence between sample distributions, and providing summaries of
+distribution characteristics through the Kolmogorov-Smirnov (KS) test and KL divergence metrics.
+
+@author Ivo Petrov
+@date   13/03/2024
+"""
+
 import arviz
 import scipy
 import numpy as np

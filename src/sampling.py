@@ -1,3 +1,12 @@
+"""!
+@file   sampling.py
+@brief  This file contains implementations of the Metropolis-Hastings algorithm, emcee sampler,
+and a Nessai model for posterior sampling. It also includes utility functions for processing and
+cleaning the generated Markov chains.
+
+@author Ivo Petrov
+@date   13/03/2024
+"""
 import numpy as np
 import scipy.stats as stats
 from emcee import EnsembleSampler
@@ -22,15 +31,20 @@ def metropolis_hastings(
     @returns                The generated Markov chain.
     """
     np.random.seed(random_seed)
+
+    # Initialize storage variables
     num_accept = 0
     samples = np.zeros((n_iter + 1, len(starting_point)))
     samples[0] = starting_point
 
     for i in range(n_iter):
         x_current = samples[i]
+
+        # Sample from propsal distribution and compute the required a
         x_proposed = stats.multivariate_normal.rvs(x_current, cov_matrix)
         log_a = log_pdf(*x_proposed) - log_pdf(*x_current)
 
+        # Determine whether to accept/reject
         u = np.random.uniform()
         if np.log(u) < log_a:
             samples[i + 1] = x_proposed
@@ -65,6 +79,8 @@ def emcee_sampler(
     sampler = EnsembleSampler(n_walkers, n_dim, log_pdf)
     sampler.run_mcmc(starting_points, n_iter)
     chains = sampler.get_chain()
+
+    # Interleave the chains from all walkers
     return np.hstack([*chains]).reshape(-1, chains[0].shape[1])
 
 
@@ -96,6 +112,7 @@ class NessaiModel(Model):
         @returns    The log-prior for the parameters.
         """
         log_p = np.log(self.in_bounds(x), dtype="float")
+        # Sum up the prior distributions
         for name in self.names:
             log_p += np.log(self.prior_distributions[name](x[name]))
         return log_p
@@ -105,6 +122,7 @@ class NessaiModel(Model):
         @param      The array of parameters.
         @returns    The log-likelihood for the parameters.
         """
+        # Apply the likelihood function
         return self.likelihood(**{name: x[name] for name in self.names})
 
 
@@ -131,8 +149,11 @@ def clean_chain(chain, burnin=0):
     @param burnin   The initial number of samples to be skipped.
 
     @returns        The cleaned up samples, ensured to likely be i.i.d."""
+    # Compute integrated autocorrelation time
     tau = [integrated_time(chain[:, i]) for i in range(chain.shape[1])]
     thin = max(2 * int(np.max(tau)) - 1, 1)
+
+    # Clean the chain for independent samples
     samples = chain[burnin::thin, :]
 
     print(f"Final number of samples is {len(samples)}")
