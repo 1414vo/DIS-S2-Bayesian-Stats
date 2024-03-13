@@ -14,9 +14,17 @@ import corner
 import scipy
 import arviz as az
 import numpy as np
+from typing import Iterable, Tuple, Callable
+from numpy.typing import ArrayLike
 
 
-def trace_plot(chain, param_names, title=None, out_path=None, max_len=5000):
+def trace_plot(
+    chain: ArrayLike,
+    param_names: Iterable[str],
+    title: str = None,
+    out_path: str = None,
+    max_len: int = 5000,
+):
     """! Displays the trace plot for a generated Markov chain.
 
     @param chain        The generated Markov Chain
@@ -52,7 +60,13 @@ def trace_plot(chain, param_names, title=None, out_path=None, max_len=5000):
         plt.savefig(out_path, dpi=300)
 
 
-def autocorr_plot(chain, param_names, max_lag=1000, title=None, out_path=None):
+def autocorr_plot(
+    chain: ArrayLike,
+    param_names: Iterable[str],
+    max_lag: int = 1000,
+    title: str = None,
+    out_path: str = None,
+):
     """! Displays the autocorrelation plots for a generated Markov chain.
 
     @param chain        The generated Markov Chain
@@ -87,7 +101,12 @@ def autocorr_plot(chain, param_names, max_lag=1000, title=None, out_path=None):
         plt.savefig(out_path, dpi=300)
 
 
-def corner_plot(samples, param_names, title=None, out_path=None):
+def corner_plot(
+    samples: ArrayLike,
+    param_names: Iterable[str],
+    title: str = None,
+    out_path: str = None,
+):
     """! Displays the 2-dimensional and 1-dimensional plot
 
     @param chain        The isolated IID samples.
@@ -108,7 +127,7 @@ def corner_plot(samples, param_names, title=None, out_path=None):
         plt.savefig(out_path, dpi=300)
 
 
-def plot_cauchy_convergence(out_path=None):
+def plot_cauchy_convergence(out_path: str = None):
     """! A plot to compare the convergence of the Cauchy and Normal
     distribution means.
 
@@ -161,7 +180,13 @@ def plot_cauchy_convergence(out_path=None):
 
 
 def compare_prior(
-    prior_pdfs, samples, param_names, x_ranges, y_scales, bins=30, out_path=None
+    prior_pdfs: Callable[[ArrayLike], float],
+    samples: ArrayLike,
+    param_names: Iterable[str],
+    x_ranges: Iterable[Tuple[float, float]],
+    y_scales: Iterable[str],
+    bins: int = 30,
+    out_path: str = None,
 ):
     """! Compares multiple parameters' prior distributions with samples drawn for them.
 

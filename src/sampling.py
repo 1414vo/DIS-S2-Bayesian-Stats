@@ -9,6 +9,8 @@ cleaning the generated Markov chains.
 """
 import numpy as np
 import scipy.stats as stats
+from typing import Callable, List, Dict
+from numpy.typing import ArrayLike
 from emcee import EnsembleSampler
 from emcee.autocorr import integrated_time
 from nessai.model import Model
@@ -16,7 +18,11 @@ from nessai.flowsampler import FlowSampler
 
 
 def metropolis_hastings(
-    starting_point, log_pdf, cov_matrix, n_iter=500000, random_seed=0
+    starting_point: ArrayLike,
+    log_pdf: Callable[[ArrayLike], float],
+    cov_matrix: ArrayLike,
+    n_iter: int = 500000,
+    random_seed: int = 0,
 ):
     """! Implements the Metropolis-Hastings algorithm with a Gaussian proposal
     distribution.
@@ -56,7 +62,12 @@ def metropolis_hastings(
 
 
 def emcee_sampler(
-    log_pdf, prior_distributions, n_iter, n_dim, n_walkers=100, random_seed=0
+    log_pdf: Callable[[ArrayLike], float],
+    prior_distributions: List[Callable[[ArrayLike], float]],
+    n_iter: int,
+    n_dim: int,
+    n_walkers: int = 100,
+    random_seed: int = 0,
 ):
     """! A sampler that utilises the implementation from the "emcee" library.
 
@@ -93,7 +104,13 @@ class NessaiModel(Model):
     @param likelihood           The likelihood of the data given the parameter set.
     """
 
-    def __init__(self, param_names, param_bounds, prior_distributions, likelihood):
+    def __init__(
+        self,
+        param_names: List[str],
+        param_bounds: List,
+        prior_distributions: Dict[str, Callable[[ArrayLike], float]],
+        likelihood: Callable[[ArrayLike], float],
+    ):
         """! Initializes the Nessai sampler.
 
         @param param_names          The names of the variables being sampled.
@@ -126,7 +143,9 @@ class NessaiModel(Model):
         return self.likelihood(**{name: x[name] for name in self.names})
 
 
-def nessai_sampler(model, n_iter, random_seed=0, output_path="./"):
+def nessai_sampler(
+    model: NessaiModel, n_iter: int, random_seed: int = 0, output_path: str = "./"
+):
     """! An AI sampler for a predefined model.
 
     @param model        The defined Nessai model.
@@ -142,7 +161,7 @@ def nessai_sampler(model, n_iter, random_seed=0, output_path="./"):
     return samples
 
 
-def clean_chain(chain, burnin=0):
+def clean_chain(chain: ArrayLike, burnin: int = 0):
     """! Cleans up the Markov Chain including for correlations and burnin.
 
     @param chain    The list of samples.

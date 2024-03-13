@@ -12,11 +12,18 @@ and log-posterior for the lighthouse detection problem.
 """
 import scipy.stats as stats
 import numpy as np
+from numpy.typing import ArrayLike
 
 
 def simple_posterior(
-    x, alpha, beta, alpha_min=-20, alpha_max=20, beta_min=0, beta_max=50
-):
+    x: ArrayLike,
+    alpha: float,
+    beta: float,
+    alpha_min: float = -20,
+    alpha_max: float = 20,
+    beta_min: float = 0,
+    beta_max: float = 50,
+) -> float:
     """!Defines the logarithm non-normalized posterior for the simple detection problem.
 
     @param x            A set of observed light detections.
@@ -43,7 +50,9 @@ def simple_posterior(
     return np.nan_to_num(likelihood + prior_alpha + prior_beta, nan=-np.inf)
 
 
-def intensity_likelihood(x, log_i, alpha, beta, i_0):
+def intensity_likelihood(
+    x: ArrayLike, log_i: ArrayLike, alpha: float, beta: float, i_0: float
+) -> float:
     """!Defines the log-likelihood for the detection problem,
     including information about the light intensity.
 
@@ -66,18 +75,18 @@ def intensity_likelihood(x, log_i, alpha, beta, i_0):
 
 
 def intensity_posterior(
-    x,
-    log_i,
-    alpha,
-    beta,
-    i_0,
-    alpha_min=-20,
-    alpha_max=20,
-    beta_min=0,
-    beta_max=50,
-    i_min=1e-2,
-    i_max=10,
-):
+    x: ArrayLike,
+    log_i: ArrayLike,
+    alpha: float,
+    beta: float,
+    i_0: float,
+    alpha_min: float = -20,
+    alpha_max: float = 20,
+    beta_min: float = 0,
+    beta_max: float = 50,
+    i_min: float = 1e-2,
+    i_max: float = 10,
+) -> float:
     """!Defines the non-normalized posterior for the detection problem,
     including information about the light intensity.
 
