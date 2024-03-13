@@ -1,3 +1,13 @@
+"""!
+@file   main.py
+@brief  Consequently executes the other 2 scripts, as well as generating a demonstration
+for the Cauchy distribution convergence.
+
+This scripts creates all the necessary measures and plots detailed in the report in a sequential manner.
+
+@author Ivo Petrov
+@date   13/03/2024
+"""
 import argparse
 from .part_v import execute_part_v
 from .part_vii import execute_part_vii

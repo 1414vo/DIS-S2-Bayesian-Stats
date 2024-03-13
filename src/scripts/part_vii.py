@@ -1,3 +1,13 @@
+"""!
+@file   part_vii.py
+@brief  Executes parameter estimation using Metropolis-Hastings, emcee, and Nessai sampling methods.
+
+This script is designed to perform parameter estimation on lighthouse location and intensity data using different
+Markov Chain Monte Carlo (MCMC) algorithms.
+
+@author Ivo Petrov
+@date   13/03/2024
+"""
 import numpy as np
 import scipy.stats as stats
 import argparse
@@ -15,11 +25,23 @@ from src.distributions import intensity_posterior, intensity_likelihood
 
 
 def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
+    """! Sequentially executes the Metropolis-Hastings, Ensemble Sampling and
+    Nested Sampling algorithms alongside all diagonstic plots and measurements.
+    Uses the information from the light detection's location as well as intensity.
+
+    @param data_path    The location of the data file.
+    @param output_path  Where to store the plots/diagnostic information.
+    @param do_kld       Whether to generate the Kullback-Leibler
+    information (NOTE: computationally expensive).
+    """
     # Suppress warnings (which are irrelevant to the program's execution)
     warnings.simplefilter("ignore")
 
+    # Load in the data
     x = np.loadtxt(data_path)[:, 0]
-    log_i = np.loadtxt(data_path)[:, 1]
+    log_i = np.log(np.loadtxt(data_path)[:, 1])
+
+    # Define 2 versions of the posterior (used for different applications)
     true_pdf = lambda params: intensity_posterior(
         x=x, log_i=log_i, alpha=params[0], beta=params[1], i_0=params[2]
     )
