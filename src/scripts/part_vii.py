@@ -52,12 +52,12 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
     prior_distributions = [
         stats.uniform(loc=-20, scale=40),
         stats.uniform(loc=0, scale=50),
-        stats.loguniform(a=1e-2, b=1000),
+        stats.loguniform(a=1e-2, b=10),
     ]
     x_ranges = [
         [-5, 5],
         [0, 12],
-        [1, 1000],
+        [1e-2, 10],
     ]
     y_scales = ["linear", "linear", "log"]
 
@@ -67,7 +67,7 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
     print("---------------------------")
 
     # Generate chain
-    cov_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 7000]])
+    cov_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 4]])
     mh_chain = metropolis_hastings([0, 1, 1], log_pdf, cov_matrix, n_iter=500000)
 
     # Summary statistics
@@ -121,7 +121,7 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
     starting_distributions = [
         stats.uniform(loc=-1, scale=2),
         stats.uniform(loc=1e-2, scale=10),
-        stats.loguniform(a=1e-2, b=1000),
+        stats.loguniform(a=1e-2, b=10),
     ]
 
     # Generate chain
@@ -184,11 +184,11 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
     # the unnormalized posterior
     nessai_model = NessaiModel(
         param_names=["alpha", "beta", "i_0"],
-        param_bounds={"alpha": [-20, 20], "beta": [0, 50], "i_0": [1e-5, 1000]},
+        param_bounds={"alpha": [-20, 20], "beta": [0, 50], "i_0": [1e-2, 10]},
         prior_distributions={
             "alpha": stats.uniform(loc=-20, scale=40).pdf,
             "beta": stats.uniform(loc=0, scale=50).pdf,
-            "i_0": stats.loguniform(a=1e-2, b=1000).pdf,
+            "i_0": stats.loguniform(a=1e-2, b=10).pdf,
         },
         likelihood=lambda alpha, beta, i_0: intensity_likelihood(
             x=x, log_i=log_i, alpha=alpha, beta=beta, i_0=i_0
