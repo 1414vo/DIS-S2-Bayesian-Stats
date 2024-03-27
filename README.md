@@ -116,3 +116,10 @@ Repository was created using a script provided by James Fergusson towards the DI
 The core of the project was done thanks to the development of state of the art sampling models, namely Michael J. Williams's [`nessai`](https://nessai.readthedocs.io/en/latest/) and Dan Foreman-Mackey et al.'s [`emcee`]. The relevant papers can be found at:
  - `nessai`: https://arxiv.org/abs/2302.08526
  - `emcee` : https://arxiv.org/abs/1202.3665
+
+### Use of generative tools
+We acknowledge the utilization of ChatGPT, developed by OpenAI, for purposes related to generating documentation. ChatGPT was employed as a tool to assist in creating Doxygen-complacent documentation for describing the source files, contributing to the completion of the project's objectives. No other generative tools were used, and ChatGPT was not used for any purpose outside of the aforementioned tasks.
+
+Reference:
+
+OpenAI. ChatGPT. 2023, https://openai.com/chatgpt.
