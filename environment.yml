@@ -27,4 +27,5 @@ dependencies:
   - corner
   - pymc
   - tabulate
+  - doxygen
 prefix: /opt/conda
