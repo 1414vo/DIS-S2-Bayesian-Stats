@@ -1,3 +1,13 @@
+"""!
+@file   part_vii.py
+@brief  Executes parameter estimation using Metropolis-Hastings, emcee, and Nessai sampling methods.
+
+This script is designed to perform parameter estimation on lighthouse location and intensity data using different
+Markov Chain Monte Carlo (MCMC) algorithms.
+
+@author Ivo Petrov
+@date   13/03/2024
+"""
 import numpy as np
 import scipy.stats as stats
 import argparse
@@ -15,11 +25,23 @@ from src.distributions import intensity_posterior, intensity_likelihood
 
 
 def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
+    """! Sequentially executes the Metropolis-Hastings, Ensemble Sampling and
+    Nested Sampling algorithms alongside all diagonstic plots and measurements.
+    Uses the information from the light detection's location as well as intensity.
+
+    @param data_path    The location of the data file.
+    @param output_path  Where to store the plots/diagnostic information.
+    @param do_kld       Whether to generate the Kullback-Leibler
+    information (NOTE: computationally expensive).
+    """
     # Suppress warnings (which are irrelevant to the program's execution)
     warnings.simplefilter("ignore")
 
+    # Load in the data
     x = np.loadtxt(data_path)[:, 0]
-    log_i = np.loadtxt(data_path)[:, 1]
+    log_i = np.log(np.loadtxt(data_path)[:, 1])
+
+    # Define 2 versions of the posterior (used for different applications)
     true_pdf = lambda params: intensity_posterior(
         x=x, log_i=log_i, alpha=params[0], beta=params[1], i_0=params[2]
     )
@@ -30,12 +52,12 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
     prior_distributions = [
         stats.uniform(loc=-20, scale=40),
         stats.uniform(loc=0, scale=50),
-        stats.loguniform(a=1e-2, b=1000),
+        stats.loguniform(a=1e-2, b=10),
     ]
     x_ranges = [
         [-5, 5],
         [0, 12],
-        [1, 1000],
+        [1e-2, 10],
     ]
     y_scales = ["linear", "linear", "log"]
 
@@ -45,7 +67,7 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
     print("---------------------------")
 
     # Generate chain
-    cov_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 7000]])
+    cov_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 4]])
     mh_chain = metropolis_hastings([0, 1, 1], log_pdf, cov_matrix, n_iter=500000)
 
     # Summary statistics
@@ -99,7 +121,7 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
     starting_distributions = [
         stats.uniform(loc=-1, scale=2),
         stats.uniform(loc=1e-2, scale=10),
-        stats.loguniform(a=1e-2, b=1000),
+        stats.loguniform(a=1e-2, b=10),
     ]
 
     # Generate chain
@@ -162,11 +184,11 @@ def execute_part_vii(data_path: str, output_path: str, do_kld: bool):
     # the unnormalized posterior
     nessai_model = NessaiModel(
         param_names=["alpha", "beta", "i_0"],
-        param_bounds={"alpha": [-20, 20], "beta": [0, 50], "i_0": [1e-5, 1000]},
+        param_bounds={"alpha": [-20, 20], "beta": [0, 50], "i_0": [1e-2, 10]},
         prior_distributions={
             "alpha": stats.uniform(loc=-20, scale=40).pdf,
             "beta": stats.uniform(loc=0, scale=50).pdf,
-            "i_0": stats.loguniform(a=1e-2, b=1000).pdf,
+            "i_0": stats.loguniform(a=1e-2, b=10).pdf,
         },
         likelihood=lambda alpha, beta, i_0: intensity_likelihood(
             x=x, log_i=log_i, alpha=alpha, beta=beta, i_0=i_0

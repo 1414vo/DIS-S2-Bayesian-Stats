@@ -1,5 +1,16 @@
+"""!
+@file   sampling.py
+@brief  This file contains implementations of the Metropolis-Hastings algorithm, emcee sampler,
+and a Nessai model for posterior sampling. It also includes utility functions for processing and
+cleaning the generated Markov chains.
+
+@author Ivo Petrov
+@date   13/03/2024
+"""
 import numpy as np
 import scipy.stats as stats
+from typing import Callable, List, Dict
+from numpy.typing import ArrayLike
 from emcee import EnsembleSampler
 from emcee.autocorr import integrated_time
 from nessai.model import Model
@@ -7,7 +18,11 @@ from nessai.flowsampler import FlowSampler
 
 
 def metropolis_hastings(
-    starting_point, log_pdf, cov_matrix, n_iter=500000, random_seed=0
+    starting_point: ArrayLike,
+    log_pdf: Callable[[ArrayLike], float],
+    cov_matrix: ArrayLike,
+    n_iter: int = 500000,
+    random_seed: int = 0,
 ):
     """! Implements the Metropolis-Hastings algorithm with a Gaussian proposal
     distribution.
@@ -22,15 +37,20 @@ def metropolis_hastings(
     @returns                The generated Markov chain.
     """
     np.random.seed(random_seed)
+
+    # Initialize storage variables
     num_accept = 0
     samples = np.zeros((n_iter + 1, len(starting_point)))
     samples[0] = starting_point
 
     for i in range(n_iter):
         x_current = samples[i]
+
+        # Sample from propsal distribution and compute the required a
         x_proposed = stats.multivariate_normal.rvs(x_current, cov_matrix)
         log_a = log_pdf(*x_proposed) - log_pdf(*x_current)
 
+        # Determine whether to accept/reject
         u = np.random.uniform()
         if np.log(u) < log_a:
             samples[i + 1] = x_proposed
@@ -42,7 +62,12 @@ def metropolis_hastings(
 
 
 def emcee_sampler(
-    log_pdf, prior_distributions, n_iter, n_dim, n_walkers=100, random_seed=0
+    log_pdf: Callable[[ArrayLike], float],
+    prior_distributions: List[Callable[[ArrayLike], float]],
+    n_iter: int,
+    n_dim: int,
+    n_walkers: int = 100,
+    random_seed: int = 0,
 ):
     """! A sampler that utilises the implementation from the "emcee" library.
 
@@ -65,6 +90,8 @@ def emcee_sampler(
     sampler = EnsembleSampler(n_walkers, n_dim, log_pdf)
     sampler.run_mcmc(starting_points, n_iter)
     chains = sampler.get_chain()
+
+    # Interleave the chains from all walkers
     return np.hstack([*chains]).reshape(-1, chains[0].shape[1])
 
 
@@ -77,7 +104,13 @@ class NessaiModel(Model):
     @param likelihood           The likelihood of the data given the parameter set.
     """
 
-    def __init__(self, param_names, param_bounds, prior_distributions, likelihood):
+    def __init__(
+        self,
+        param_names: List[str],
+        param_bounds: List,
+        prior_distributions: Dict[str, Callable[[ArrayLike], float]],
+        likelihood: Callable[[ArrayLike], float],
+    ):
         """! Initializes the Nessai sampler.
 
         @param param_names          The names of the variables being sampled.
@@ -96,6 +129,7 @@ class NessaiModel(Model):
         @returns    The log-prior for the parameters.
         """
         log_p = np.log(self.in_bounds(x), dtype="float")
+        # Sum up the prior distributions
         for name in self.names:
             log_p += np.log(self.prior_distributions[name](x[name]))
         return log_p
@@ -105,10 +139,13 @@ class NessaiModel(Model):
         @param      The array of parameters.
         @returns    The log-likelihood for the parameters.
         """
+        # Apply the likelihood function
         return self.likelihood(**{name: x[name] for name in self.names})
 
 
-def nessai_sampler(model, n_iter, random_seed=0, output_path="./"):
+def nessai_sampler(
+    model: NessaiModel, n_iter: int, random_seed: int = 0, output_path: str = "./"
+):
     """! An AI sampler for a predefined model.
 
     @param model        The defined Nessai model.
@@ -124,15 +161,18 @@ def nessai_sampler(model, n_iter, random_seed=0, output_path="./"):
     return samples
 
 
-def clean_chain(chain, burnin=0):
+def clean_chain(chain: ArrayLike, burnin: int = 0):
     """! Cleans up the Markov Chain including for correlations and burnin.
 
     @param chain    The list of samples.
     @param burnin   The initial number of samples to be skipped.
 
     @returns        The cleaned up samples, ensured to likely be i.i.d."""
+    # Compute integrated autocorrelation time
     tau = [integrated_time(chain[:, i]) for i in range(chain.shape[1])]
     thin = max(2 * int(np.max(tau)) - 1, 1)
+
+    # Clean the chain for independent samples
     samples = chain[burnin::thin, :]
 
     print(f"Final number of samples is {len(samples)}")

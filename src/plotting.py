@@ -1,11 +1,30 @@
+"""!
+@file   plotting.py
+@brief  This file contains various plotting functions to visualize diagnostics and
+comparisons for statistical distributions and sampling algorithms.
+
+The functions are tailored for analyzing Markov chain samples and their convergence behaviour using trace plots,
+autocorrelation plots, corner plots, etc.
+
+@author Ivo Petrov
+@date   13/03/2024
+"""
 import matplotlib.pyplot as plt
 import corner
 import scipy
 import arviz as az
 import numpy as np
+from typing import Iterable, Tuple, Callable
+from numpy.typing import ArrayLike
 
 
-def trace_plot(chain, param_names, title=None, out_path=None, max_len=5000):
+def trace_plot(
+    chain: ArrayLike,
+    param_names: Iterable[str],
+    title: str = None,
+    out_path: str = None,
+    max_len: int = 5000,
+):
     """! Displays the trace plot for a generated Markov chain.
 
     @param chain        The generated Markov Chain
@@ -14,7 +33,10 @@ def trace_plot(chain, param_names, title=None, out_path=None, max_len=5000):
     @param out_path     The output path of where to save the plot.
     @param max_len"""
     plt.figure(figsize=(8, 3))
+
+    # Plot a trace for each parameter
     for i, param in enumerate(param_names):
+        # Plot normalized traces (shift for visibility)
         plt.plot(
             chain[:max_len, i] / chain[:max_len, i].max() + i, label=param, alpha=0.35
         )
@@ -30,13 +52,21 @@ def trace_plot(chain, param_names, title=None, out_path=None, max_len=5000):
     plt.suptitle(title)
     plt.legend()
     plt.tight_layout()
+
+    # Save or show plot
     if out_path is None:
         plt.show()
     else:
         plt.savefig(out_path, dpi=300)
 
 
-def autocorr_plot(chain, param_names, max_lag=1000, title=None, out_path=None):
+def autocorr_plot(
+    chain: ArrayLike,
+    param_names: Iterable[str],
+    max_lag: int = 1000,
+    title: str = None,
+    out_path: str = None,
+):
     """! Displays the autocorrelation plots for a generated Markov chain.
 
     @param chain        The generated Markov Chain
@@ -46,10 +76,13 @@ def autocorr_plot(chain, param_names, max_lag=1000, title=None, out_path=None):
     @param out_path     The output path of where to save the plot."""
 
     plt.rcParams.update({"font.size": 22})
+
     fig, ax = plt.subplots(1, len(param_names), figsize=(16, 6), dpi=120)
+    # Create an Arviz dataset for compatibility
     dataset = az.from_dict(
         {param: chain[np.newaxis, :, i] for i, param in enumerate(param_names)}
     )
+    # Plot the autocorrelation dependencies
     az.plot_autocorr(dataset, max_lag=max_lag, ax=ax)
 
     # Add labels and title
@@ -60,31 +93,41 @@ def autocorr_plot(chain, param_names, max_lag=1000, title=None, out_path=None):
     plt.tight_layout()
 
     plt.rcParams.update({"font.size": 10})
+
+    # Save or show plot
     if out_path is None:
         plt.show()
     else:
         plt.savefig(out_path, dpi=300)
 
 
-def corner_plot(samples, param_names, title=None, out_path=None):
+def corner_plot(
+    samples: ArrayLike,
+    param_names: Iterable[str],
+    title: str = None,
+    out_path: str = None,
+):
     """! Displays the 2-dimensional and 1-dimensional plot
 
     @param chain        The isolated IID samples.
     @param param_names  The names of the parameters.
     @param title        Customizable plot title.
     @param out_path     The output path of where to save the plot."""
+    # Corner plot with the quantiles corresponding to the median an 1 std.
     corner.corner(
         samples, labels=param_names, quantiles=[0.16, 0.5, 0.84], show_titles=True
     )
     plt.suptitle(title)
     plt.tight_layout()
+
+    # Save or show plot
     if out_path is None:
         plt.show()
     else:
         plt.savefig(out_path, dpi=300)
 
 
-def plot_cauchy_convergence(out_path=None):
+def plot_cauchy_convergence(out_path: str = None):
     """! A plot to compare the convergence of the Cauchy and Normal
     distribution means.
 
@@ -98,9 +141,11 @@ def plot_cauchy_convergence(out_path=None):
     normal_means = []
 
     for size in sample_sizes:
+        # Generate samples for each sample size
         cauchy_samples = scipy.stats.cauchy.rvs(size=size)
         normal_samples = scipy.stats.norm.rvs(size=size)
 
+        # Collect their means
         cauchy_means.append(np.mean(cauchy_samples))
         normal_means.append(np.mean(normal_samples))
 
@@ -126,7 +171,8 @@ def plot_cauchy_convergence(out_path=None):
     plt.legend()
     plt.tight_layout()
     plt.rcParams.update({"font.size": 10})
-    # Save/plot figure
+
+    # Save or show plot
     if out_path is None:
         plt.show()
     else:
@@ -134,7 +180,13 @@ def plot_cauchy_convergence(out_path=None):
 
 
 def compare_prior(
-    prior_pdfs, samples, param_names, x_ranges, y_scales, bins=30, out_path=None
+    prior_pdfs: Callable[[ArrayLike], float],
+    samples: ArrayLike,
+    param_names: Iterable[str],
+    x_ranges: Iterable[Tuple[float, float]],
+    y_scales: Iterable[str],
+    bins: int = 30,
+    out_path: str = None,
 ):
     """! Compares multiple parameters' prior distributions with samples drawn for them.
 
@@ -186,6 +238,7 @@ def compare_prior(
 
     plt.tight_layout()
 
+    # Save or show plot
     if out_path is None:
         plt.show()
     else:

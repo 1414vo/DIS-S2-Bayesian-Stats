@@ -1,12 +1,26 @@
+"""!
+@file   diagnostics.py
+@brief  This file contains functions for computing and displaying diagnostic statistics for
+Markov chain convergence and sample analysis.
+
+Details include the application of the Gelman-Rubin statistic, measuring the effective fraction of samples,
+computing symmetric Kullback-Leibler (KL) divergence between sample distributions, and providing summaries of
+distribution characteristics through the Kolmogorov-Smirnov (KS) test and KL divergence metrics.
+
+@author Ivo Petrov
+@date   13/03/2024
+"""
+
 import arviz
 import scipy
 import numpy as np
+from numpy.typing import ArrayLike
 from typing import Iterable, List
 from tabulate import tabulate
 
 
 def chain_convergence_diagnostics(
-    chains: np.array, samples: Iterable, param_names: Iterable[str]
+    chains: ArrayLike, samples: ArrayLike, param_names: Iterable[str]
 ):
     """! Computes and displays diagnostic statistics for the Markov chain and
     the extract samples. This includes the Gelman-Rubin statistic, as well as
@@ -34,11 +48,11 @@ def chain_convergence_diagnostics(
         )
 
 
-def symmetric_kl_divergence(x: Iterable, y: Iterable):
-    r"""r! Computes the symmetric KL Divergence for two samples \f$x\f$ and \f$y\f$.
+def symmetric_kl_divergence(x: ArrayLike, y: ArrayLike):
+    r"""! Computes the symmetric KL Divergence for two samples \f(x\f) and \f(y\f).
     The symmetric KL Divergence is given by:
-    \f$KL(P,Q) = \frac{1}{2}(KL(P||Q) + KL(Q||P)\f$, where:
-    \f$KL(P||Q) = \int P(x)\log{\frac{P(x)}{Q(x)}dx}\f
+    \f(KL(P,Q) = \frac{1}{2}(KL(P||Q) + KL(Q||P)\f), where:
+    \f$KL(P||Q) = \int P(x)\log{\frac{P(x)}{Q(x)}dx}\f$
 
     @param x    The first sample.
     @param y    The second sample.
@@ -80,7 +94,7 @@ def symmetric_kl_divergence(x: Iterable, y: Iterable):
 
 
 def distribution_summaries(
-    samples: Iterable, algo_names: List[str], do_kld: bool = False
+    samples: ArrayLike, algo_names: List[str], do_kld: bool = False
 ):
     """! Displays the distribution relationships using the KS test and the
     KL divergence metric.
