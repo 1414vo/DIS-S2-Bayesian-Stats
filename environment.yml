@@ -1,0 +1,30 @@
+name: base
+channels:
+  - dglteam
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - conda==24.1.2
+  - setuptools
+  - pip
+  - wheel
+  - conda-content-trust
+  - conda-libmamba-solver
+  - ipykernel
+  - black
+  - configparser
+  - flake8
+  - matplotlib
+  - numpy
+  - pandas
+  - pre-commit
+  - pytest
+  - scipy
+  - emcee
+  - nessai
+  - corner
+  - pymc
+  - tabulate
+prefix: /opt/conda
