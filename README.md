@@ -39,6 +39,12 @@ Alongside the code, following best practices, we include:
 We provide 2 ways of installing the relevant dependencies and setting up the environment correctly - through Docker or Conda. Docker is preferred due to its high reliability across different operating systems and hardware. However, Conda is still a reliable enough option that requires less effort to set up.
 
 ### Using Docker
+If you do not have the ``miniconda`` image, run the following command:
+
+``docker pull continuumio/miniconda3``
+
+After that, follow the instructions below:
+
 1. With the Dockerfile provided, create an image using:
 
 ```docker build -t s2_ivp24 .```
@@ -67,6 +73,10 @@ Setting up the Conda environment can be done using the following commands:
 The preferred way to run the script is:
 
 ``python -m src.scripts.main <data_path> <output_path>``
+
+NOTE: If it does not exist already, please create the output path folder as so:
+
+``mkdir <output_path>``
 
 If you would like to replicate the Kullback-Liebler Divergence measurements, as shown in the project, please enable the `--kld` tag, as follows:
 
